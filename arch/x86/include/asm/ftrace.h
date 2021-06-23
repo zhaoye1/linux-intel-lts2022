@@ -23,7 +23,7 @@
 #define HAVE_FUNCTION_GRAPH_RET_ADDR_PTR
 
 #ifndef __ASSEMBLY__
-extern void __fentry__(void);
+DECLARE_NOT_CALLED_FROM_C(__fentry__);
 
 static inline unsigned long ftrace_call_adjust(unsigned long addr)
 {

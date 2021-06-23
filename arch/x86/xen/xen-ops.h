@@ -8,12 +8,12 @@
 #include <xen/xen-ops.h>
 
 /* These are code, but not functions.  Defined in entry.S */
-extern const char xen_failsafe_callback[];
+DECLARE_NOT_CALLED_FROM_C(xen_failsafe_callback);
 
-void xen_entry_SYSENTER_compat(void);
+DECLARE_NOT_CALLED_FROM_C(xen_entry_SYSENTER_compat);
 #ifdef CONFIG_X86_64
-void xen_entry_SYSCALL_64(void);
-void xen_entry_SYSCALL_compat(void);
+DECLARE_NOT_CALLED_FROM_C(xen_entry_SYSCALL_64);
+DECLARE_NOT_CALLED_FROM_C(xen_entry_SYSCALL_compat);
 #endif
 
 extern void *xen_initial_gdt;
@@ -138,7 +138,7 @@ __visible unsigned long xen_read_cr2(void);
 __visible unsigned long xen_read_cr2_direct(void);
 
 /* These are not functions, and cannot be called normally */
-__visible void xen_iret(void);
+DECLARE_NOT_CALLED_FROM_C(xen_iret);
 
 extern int xen_panic_handler_init(void);
 
