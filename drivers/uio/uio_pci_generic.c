@@ -39,7 +39,7 @@ to_uio_pci_generic_dev(struct uio_info *info)
 	return container_of(info, struct uio_pci_generic_dev, info);
 }
 
-static int release(struct uio_info *info, struct inode *inode)
+static int release(struct uio_info *info, struct inode *inode, unsigned long user)
 {
 	struct uio_pci_generic_dev *gdev = to_uio_pci_generic_dev(info);
 
