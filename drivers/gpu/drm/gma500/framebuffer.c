@@ -19,6 +19,124 @@ static const struct drm_framebuffer_funcs psb_fb_funcs = {
 	.create_handle = drm_gem_fb_create_handle,
 };
 
+#define CMAP_TOHW(_val, _width) ((((_val) << (_width)) + 0x7FFF - (_val)) >> 16)
+
+static int psbfb_setcolreg(unsigned regno, unsigned red, unsigned green,
+			   unsigned blue, unsigned transp,
+			   struct fb_info *info)
+{
+	struct drm_fb_helper *fb_helper = info->par;
+	struct drm_framebuffer *fb = fb_helper->fb;
+	uint32_t v;
+
+	if (!fb)
+		return -ENOMEM;
+
+	if (regno > 255)
+		return 1;
+
+	red = CMAP_TOHW(red, info->var.red.length);
+	blue = CMAP_TOHW(blue, info->var.blue.length);
+	green = CMAP_TOHW(green, info->var.green.length);
+	transp = CMAP_TOHW(transp, info->var.transp.length);
+
+	v = (red << info->var.red.offset) |
+	    (green << info->var.green.offset) |
+	    (blue << info->var.blue.offset) |
+	    (transp << info->var.transp.offset);
+
+	if (regno < 16) {
+		switch (fb->format->cpp[0] * 8) {
+		case 16:
+			((uint32_t *) info->pseudo_palette)[regno] = v;
+			break;
+		case 24:
+		case 32:
+			((uint32_t *) info->pseudo_palette)[regno] = v;
+			break;
+		}
+	}
+
+	return 0;
+}
+
+static vm_fault_t psbfb_vm_fault(struct vm_fault *vmf)
+{
+	struct vm_area_struct *vma = vmf->vma;
+	struct drm_framebuffer *fb = vma->vm_private_data;
+	struct drm_device *dev = fb->dev;
+	struct drm_psb_private *dev_priv = to_drm_psb_private(dev);
+	struct psb_gem_object *pobj = to_psb_gem_object(fb->obj[0]);
+	int page_num;
+	int i;
+	unsigned long address;
+	vm_fault_t ret = VM_FAULT_SIGBUS;
+	unsigned long pfn;
+	unsigned long phys_addr = (unsigned long)dev_priv->stolen_base + pobj->offset;
+
+	page_num = vma_pages(vma);
+	address = vmf->address - (vmf->pgoff << PAGE_SHIFT);
+
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+
+	for (i = 0; i < page_num; i++) {
+		pfn = (phys_addr >> PAGE_SHIFT);
+
+		ret = vmf_insert_mixed(vma, address,
+				__pfn_to_pfn_t(pfn, PFN_DEV));
+		if (unlikely(ret & VM_FAULT_ERROR))
+			break;
+		address += PAGE_SIZE;
+		phys_addr += PAGE_SIZE;
+	}
+	return ret;
+}
+
+static void psbfb_vm_open(struct vm_area_struct *vma)
+{
+}
+
+static void psbfb_vm_close(struct vm_area_struct *vma)
+{
+}
+
+static const struct vm_operations_struct psbfb_vm_ops = {
+	.fault	= psbfb_vm_fault,
+	.open	= psbfb_vm_open,
+	.close	= psbfb_vm_close
+};
+
+static int psbfb_mmap(struct fb_info *info, struct vm_area_struct *vma)
+{
+	struct drm_fb_helper *fb_helper = info->par;
+	struct drm_framebuffer *fb = fb_helper->fb;
+
+	if (vma->vm_pgoff != 0)
+		return -EINVAL;
+	if (vma->vm_pgoff > (~0UL >> PAGE_SHIFT))
+		return -EINVAL;
+
+	/*
+	 * If this is a GEM object then info->screen_base is the virtual
+	 * kernel remapping of the object. FIXME: Review if this is
+	 * suitable for our mmap work
+	 */
+	vma->vm_ops = &psbfb_vm_ops;
+	vma->vm_private_data = (void *)fb;
+	vm_flags_set(vma, VM_IO | VM_MIXEDMAP | VM_DONTEXPAND | VM_DONTDUMP);
+	return 0;
+}
+
+static const struct fb_ops psbfb_unaccel_ops = {
+	.owner = THIS_MODULE,
+	DRM_FB_HELPER_DEFAULT_OPS,
+	.fb_setcolreg = psbfb_setcolreg,
+	.fb_fillrect = drm_fb_helper_cfb_fillrect,
+	.fb_copyarea = drm_fb_helper_cfb_copyarea,
+	.fb_imageblit = drm_fb_helper_cfb_imageblit,
+	.fb_mmap = psbfb_mmap,
+};
+
 /**
  *	psb_framebuffer_init	-	initialize a framebuffer
  *	@dev: our DRM device

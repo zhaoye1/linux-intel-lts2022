@@ -27,6 +27,7 @@
 #include <linux/irqreturn.h>
 #include <linux/iopoll.h>
 #include <linux/refcount.h>
+#include <linux/android_kabi.h>
 
 #include <linux/atomic.h>
 
@@ -734,6 +735,11 @@ struct phy_device {
 	 * AN mode setting with phylink framework.
 	 */
 	u8 cur_link_an_mode;
+
+	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_RESERVE(2);
+	ANDROID_KABI_RESERVE(3);
+	ANDROID_KABI_RESERVE(4);
 };
 
 static inline struct phy_device *to_phy_device(const struct device *dev)
@@ -976,6 +982,9 @@ struct phy_driver {
 	int (*get_sqi)(struct phy_device *dev);
 	/** @get_sqi_max: Get the maximum signal quality indication */
 	int (*get_sqi_max)(struct phy_device *dev);
+
+	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_RESERVE(2);
 };
 #define to_phy_driver(d) container_of(to_mdio_common_driver(d),		\
 				      struct phy_driver, mdiodrv)
