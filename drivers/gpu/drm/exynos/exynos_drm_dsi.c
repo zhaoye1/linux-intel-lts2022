@@ -110,7 +110,6 @@ static int exynos_dsi_register_host(struct samsung_dsim *dsim)
 		return -ENOMEM;
 
 	dsim->priv = dsi;
-	dsim->bridge.pre_enable_prev_first = true;
 
 	return component_add(dsim->dev, &exynos_dsi_component_ops);
 }
