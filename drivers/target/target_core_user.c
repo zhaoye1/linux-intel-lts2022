@@ -1957,7 +1957,7 @@ static int tcmu_open(struct uio_info *info, struct inode *inode)
 	return 0;
 }
 
-static int tcmu_release(struct uio_info *info, struct inode *inode)
+static int tcmu_release(struct uio_info *info, struct inode *inode, unsigned long user)
 {
 	struct tcmu_dev *udev = container_of(info, struct tcmu_dev, uio_info);
 	struct tcmu_cmd *cmd;

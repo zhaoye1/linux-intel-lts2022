@@ -217,7 +217,7 @@ hv_uio_open(struct uio_info *info, struct inode *inode)
 
 /* VMBus primary channel is closed on last close */
 static int
-hv_uio_release(struct uio_info *info, struct inode *inode)
+hv_uio_release(struct uio_info *info, struct inode *inode, unsigned long user)
 {
 	struct hv_uio_private_data *pdata
 		= container_of(info, struct hv_uio_private_data, info);

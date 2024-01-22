@@ -131,7 +131,7 @@ static int cnic_uio_open(struct uio_info *uinfo, struct inode *inode)
 	return 0;
 }
 
-static int cnic_uio_close(struct uio_info *uinfo, struct inode *inode)
+static int cnic_uio_close(struct uio_info *uinfo, struct inode *inode, unsigned long user)
 {
 	struct cnic_uio_dev *udev = uinfo->priv;
 

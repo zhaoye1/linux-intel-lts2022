@@ -71,7 +71,7 @@ static int uio_dmem_genirq_open(struct uio_info *info, struct inode *inode)
 	return 0;
 }
 
-static int uio_dmem_genirq_release(struct uio_info *info, struct inode *inode)
+static int uio_dmem_genirq_release(struct uio_info *info, struct inode *inode, unsigned long user)
 {
 	struct uio_dmem_genirq_platdata *priv = info->priv;
 	struct uio_mem *uiomem;

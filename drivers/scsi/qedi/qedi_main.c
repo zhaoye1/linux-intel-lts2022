@@ -154,7 +154,7 @@ static int qedi_uio_open(struct uio_info *uinfo, struct inode *inode)
 	return 0;
 }
 
-static int qedi_uio_close(struct uio_info *uinfo, struct inode *inode)
+static int qedi_uio_close(struct uio_info *uinfo, struct inode *inode, unsigned long user)
 {
 	struct qedi_uio_dev *udev = uinfo->priv;
 	struct qedi_ctx *qedi = udev->qedi;
