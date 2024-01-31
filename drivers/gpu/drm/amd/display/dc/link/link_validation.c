@@ -354,7 +354,7 @@ bool link_validate_dpia_bandwidth(const struct dc_stream_state *stream, const un
 	if (!num_streams || num_streams > MAX_DPIA_NUM)
 		return ret;
 
-	for (uint8_t i = 0; i < num_streams; ++i) {
+	for (unsigned int i = 0; i < num_streams; ++i) {
 
 		link[i] = stream[i].link;
 		bw_needed[i] = dc_bandwidth_in_kbps_from_timing(&stream[i].timing);
