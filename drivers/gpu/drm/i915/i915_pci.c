@@ -653,6 +653,7 @@ static const struct intel_device_info tgl_info = {
 	PLATFORM(INTEL_TIGERLAKE),
 	.__runtime.platform_engine_mask =
 		BIT(RCS0) | BIT(BCS0) | BIT(VECS0) | BIT(VCS0) | BIT(VCS2),
+	.__runtime.ppgtt_size = 47,
 	.has_sriov = 1,
 };
 
@@ -689,6 +690,7 @@ static const struct intel_device_info adl_s_info = {
 	PLATFORM(INTEL_ALDERLAKE_S),
 	.__runtime.platform_engine_mask =
 		BIT(RCS0) | BIT(BCS0) | BIT(VECS0) | BIT(VCS0) | BIT(VCS2),
+	.__runtime.ppgtt_size = 47,
 	.dma_mask_size = 39,
 	.has_sriov = 1,
 };
@@ -698,7 +700,7 @@ static const struct intel_device_info adl_p_info = {
 	PLATFORM(INTEL_ALDERLAKE_P),
 	.__runtime.platform_engine_mask =
 		BIT(RCS0) | BIT(BCS0) | BIT(VECS0) | BIT(VCS0) | BIT(VCS2),
-	.__runtime.ppgtt_size = 48,
+	.__runtime.ppgtt_size = 47,
 	.dma_mask_size = 39,
 	.has_sriov = 1,
 };
