@@ -43,7 +43,6 @@ void da7219_aad_jack_det(struct snd_soc_component *component, struct snd_soc_jac
 			    DA7219_ACCDET_EN_MASK,
 			    (jack ? DA7219_ACCDET_EN_MASK : 0));
 }
-EXPORT_SYMBOL_GPL(da7219_aad_jack_det);
 
 /*
  * Button/HPTest work
@@ -663,7 +662,7 @@ static struct da7219_aad_pdata *da7219_aad_fw_to_pdata(struct device *dev)
 		aad_pdata->mic_det_thr =
 			da7219_aad_fw_mic_det_thr(dev, fw_val32);
 	else
-		aad_pdata->mic_det_thr = DA7219_AAD_MIC_DET_THR_500_OHMS;
+		aad_pdata->mic_det_thr = DA7219_AAD_MIC_DET_THR_200_OHMS;
 
 	if (fwnode_property_read_u32(aad_np, "dlg,jack-ins-deb", &fw_val32) >= 0)
 		aad_pdata->jack_ins_deb =
@@ -936,7 +935,6 @@ int da7219_aad_init(struct snd_soc_component *component)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(da7219_aad_init);
 
 void da7219_aad_exit(struct snd_soc_component *component)
 {
@@ -954,7 +952,6 @@ void da7219_aad_exit(struct snd_soc_component *component)
 	cancel_work_sync(&da7219_aad->btn_det_work);
 	cancel_work_sync(&da7219_aad->hptest_work);
 }
-EXPORT_SYMBOL_GPL(da7219_aad_exit);
 
 /*
  * AAD related I2C probe handling
@@ -978,7 +975,6 @@ int da7219_aad_probe(struct i2c_client *i2c)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(da7219_aad_probe);
 
 MODULE_DESCRIPTION("ASoC DA7219 AAD Driver");
 MODULE_AUTHOR("Adam Thomson <Adam.Thomson.Opensource@diasemi.com>");
