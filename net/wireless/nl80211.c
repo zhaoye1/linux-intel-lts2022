@@ -12827,7 +12827,7 @@ static int nl80211_set_cqm_rssi(struct genl_info *info,
 		wdev->cqm_config = cqm_config;
 	}
 
-	err = cfg80211_cqm_rssi_update(rdev, dev);
+	err = cfg80211_cqm_rssi_update(rdev, dev, cqm_config);
 
 unlock:
 	wdev_unlock(wdev);

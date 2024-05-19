@@ -74,6 +74,14 @@ struct z_erofs_pcluster {
 		struct rcu_head rcu;
 	};
 
+	union {
+		/* I: physical cluster size in pages */
+		unsigned short pclusterpages;
+
+		/* I: tailpacking inline compressed size */
+		unsigned short tailpacking_size;
+	};
+
 	/* I: compression algorithm format */
 	unsigned char algorithmformat;
 

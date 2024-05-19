@@ -3176,12 +3176,8 @@ continue_unlock:
 				goto continue_unlock;
 			}
 
-			if (folio_test_writeback(folio)) {
+			if (PageWriteback(page)) {
 				if (wbc->sync_mode != WB_SYNC_NONE)
-					f2fs_wait_on_page_writeback(
-							&folio->page,
-							DATA, true, true);
-				else
 					goto continue_unlock;
 				f2fs_wait_on_page_writeback(page, DATA, true, true);
 			}
