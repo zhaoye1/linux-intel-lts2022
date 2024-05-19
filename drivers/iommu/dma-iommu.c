@@ -31,6 +31,10 @@
 #include <linux/vmalloc.h>
 #include <trace/hooks/iommu.h>
 #include <trace/events/swiotlb.h>
+#ifndef __GENKSYMS__
+#include <trace/events/swiotlb.h>
+#endif
+#include <trace/hooks/iommu.h>
 
 #include "dma-iommu.h"
 

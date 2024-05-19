@@ -308,35 +308,6 @@ manage_start_stop_store(struct device *dev, struct device_attribute *attr,
 	return count;
 }
 
-static ssize_t manage_shutdown_show(struct device *dev,
-				    struct device_attribute *attr, char *buf)
-{
-	struct scsi_disk *sdkp = to_scsi_disk(dev);
-	struct scsi_device *sdp = sdkp->device;
-
-	return sysfs_emit(buf, "%u\n", sdp->manage_shutdown);
-}
-
-static ssize_t manage_shutdown_store(struct device *dev,
-				     struct device_attribute *attr,
-				     const char *buf, size_t count)
-{
-	struct scsi_disk *sdkp = to_scsi_disk(dev);
-	struct scsi_device *sdp = sdkp->device;
-	bool v;
-
-	if (!capable(CAP_SYS_ADMIN))
-		return -EACCES;
-
-	if (kstrtobool(buf, &v))
-		return -EINVAL;
-
-	sdp->manage_shutdown = v;
-
-	return count;
-}
-static DEVICE_ATTR_RW(manage_shutdown);
-
 static ssize_t
 allow_restart_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -3860,15 +3831,8 @@ static int sd_resume(struct device *dev)
 
 static int sd_resume_system(struct device *dev)
 {
-	if (pm_runtime_suspended(dev)) {
-		struct scsi_disk *sdkp = dev_get_drvdata(dev);
-		struct scsi_device *sdp = sdkp ? sdkp->device : NULL;
-
-		if (sdp && sdp->force_runtime_start_on_system_start)
-			pm_request_resume(dev);
-
+	if (pm_runtime_suspended(dev))
 		return 0;
-	}
 
 	return sd_resume(dev);
 }

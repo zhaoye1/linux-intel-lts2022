@@ -208,6 +208,7 @@ struct erofs_workgroup {
 
 	/* overall workgroup reference count */
 	atomic_t refcount;
+        spinlock_t lock;
 };
 
 static inline bool erofs_workgroup_try_to_freeze(struct erofs_workgroup *grp,
@@ -546,6 +547,7 @@ int __init z_erofs_init_zip_subsystem(void);
 void z_erofs_exit_zip_subsystem(void);
 int erofs_try_to_free_all_cached_pages(struct erofs_sb_info *sbi,
 				       struct erofs_workgroup *egrp);
+int erofs_init_managed_cache(struct super_block *sb);
 int erofs_try_to_free_cached_page(struct page *page);
 int z_erofs_parse_cfgs(struct super_block *sb, struct erofs_super_block *dsb);
 #else
@@ -555,6 +557,7 @@ static inline int erofs_init_shrinker(void) { return 0; }
 static inline void erofs_exit_shrinker(void) {}
 static inline int z_erofs_init_zip_subsystem(void) { return 0; }
 static inline void z_erofs_exit_zip_subsystem(void) {}
+static inline int erofs_init_managed_cache(struct super_block *sb) { return 0; }
 #endif	/* !CONFIG_EROFS_FS_ZIP */
 
 #ifdef CONFIG_EROFS_FS_ZIP_LZMA

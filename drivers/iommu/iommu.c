@@ -327,8 +327,10 @@ static int __iommu_probe_device(struct device *dev, struct list_head *group_list
 	 * but for now enforcing a simple global ordering is fine.
 	 */
 	lockdep_assert_held(&iommu_probe_device_lock);
-	if (!dev_iommu_get(dev))
-		return -ENOMEM;
+	if (!dev_iommu_get(dev)) {
+		ret = -ENOMEM;
+		goto err_out;
+	}
 
 	if (!try_module_get(ops->owner)) {
 		ret = -EINVAL;
@@ -370,6 +372,7 @@ out_module_put:
 err_free:
 	dev_iommu_free(dev);
 
+err_out:
 	return ret;
 }
 
@@ -1772,6 +1775,9 @@ static void probe_alloc_default_domain(struct bus_type *bus,
 				       struct iommu_group *group)
 {
 	struct __group_domain_type gtype;
+
+	if (group->default_domain)
+		return;
 
 	memset(&gtype, 0, sizeof(gtype));
 

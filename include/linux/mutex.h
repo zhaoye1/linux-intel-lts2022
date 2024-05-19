@@ -19,8 +19,8 @@
 #include <asm/processor.h>
 #include <linux/osq_lock.h>
 #include <linux/debug_locks.h>
-#include <linux/android_vendor.h>
 #include <linux/cleanup.h>
+#include <linux/android_vendor.h>
 
 #ifdef CONFIG_DEBUG_LOCK_ALLOC
 # define __DEP_MAP_MUTEX_INITIALIZER(lockname)			\
