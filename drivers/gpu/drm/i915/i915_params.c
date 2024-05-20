@@ -248,6 +248,11 @@ i915_param_named(max_vfs, uint, 0400,
 	"Limit number of virtual functions to allocate. "
 	"(0 = no VFs [default]; N = allow up to N VFs)");
 
+#ifdef CONFIG_QNX_GUEST
+i915_param_named(initial_vfs, uint, 0400,
+	"Number of virtual functions to initialize on startup.");
+#endif
+
 static void _param_print_bool(struct drm_printer *p, const char *name,
 			      bool val)
 {
