@@ -237,12 +237,14 @@ bool i915_gem_object_can_bypass_llc(struct drm_i915_gem_object *obj)
 	return IS_JSL_EHL(i915);
 }
 
+#if IS_ENABLED(CONFIG_DRM_I915_MEMTRACK)
 static int i915_gem_open_object(struct drm_gem_object *gem, struct drm_file *file)
 {
         struct drm_i915_gem_object *obj = to_intel_bo(gem);
 
         return i915_gem_obj_insert_pid(obj);
 }
+#endif
 
 static void i915_gem_close_object(struct drm_gem_object *gem, struct drm_file *file)
 {
@@ -913,7 +915,9 @@ int __init i915_objects_module_init(void)
 
 static const struct drm_gem_object_funcs i915_gem_object_funcs = {
 	.free = i915_gem_free_object,
+#if IS_ENABLED(CONFIG_DRM_I915_MEMTRACK)
 	.open = i915_gem_open_object,
+#endif
 	.close = i915_gem_close_object,
 	.export = i915_gem_prime_export,
 };
