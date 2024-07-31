@@ -237,8 +237,7 @@ static int insert_header(struct ctl_dir *dir, struct ctl_table_header *header)
 		return -EROFS;
 
 	/* Am I creating a permanently empty directory? */
-	if (header->ctl_table_size > 0 &&
-	    header->ctl_table == sysctl_mount_point) {
+	if (header->ctl_table == sysctl_mount_point) {
 		if (!RB_EMPTY_ROOT(&dir->root))
 			return -EINVAL;
 		set_empty_dir(dir);
@@ -1214,10 +1213,6 @@ static bool get_links(struct ctl_dir *dir,
 {
 	struct ctl_table_header *head;
 	struct ctl_table *entry, *link;
-
-	if (header->ctl_table_size == 0 ||
-	    sysctl_is_perm_empty_ctl_table(header->ctl_table))
-		return true;
 
 	/* Are there links available for every entry in table? */
 	list_for_each_table_entry(entry, table) {

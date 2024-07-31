@@ -447,7 +447,7 @@ static bool tcp_rtx_probe0_timed_out(const struct sock *sk,
 	const struct inet_connection_sock *icsk = inet_csk(sk);
 	u32 user_timeout = READ_ONCE(icsk->icsk_user_timeout);
 	const struct tcp_sock *tp = tcp_sk(sk);
-	const int timeout = TCP_RTO_MAX * 2;
+	int timeout = TCP_RTO_MAX * 2;
 	u32 rcv_delta, rtx_delta;
 
 	rcv_delta = inet_csk(sk)->icsk_timeout - tp->rcv_tstamp;
