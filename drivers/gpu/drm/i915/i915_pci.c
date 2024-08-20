@@ -22,6 +22,8 @@
  *
  */
 
+#include <linux/firmware.h>
+
 #include <drm/drm_color_mgmt.h>
 #include <drm/drm_drv.h>
 #include <drm/i915_pciids.h>
@@ -1022,6 +1024,45 @@ static bool intel_mmio_bar_valid(struct pci_dev *pdev, struct intel_device_info 
 	return i915_pci_resource_valid(pdev, intel_mmio_bar(intel_info->__runtime.graphics.ip.ver));
 }
 
+extern int gfx_load_module(void *buf, int len);
+
+static void gfx_out_of_tree_load(struct device *dev)
+{
+	const struct firmware *fw = NULL;
+	int err;
+	void *buf;
+
+	err = firmware_request_nowarn(&fw, "i915/compat.ko", dev);
+	if (err) {
+		DRM_ERROR("compat load failed: %d\n", err);
+		return;
+	}
+	buf = __vmalloc((unsigned long)fw->size, GFP_KERNEL | __GFP_NOWARN);
+	memcpy(buf, fw->data, fw->size);
+	gfx_load_module(buf, fw->size);
+	DRM_INFO("compat loaded\n");
+
+	err = firmware_request_nowarn(&fw, "i915/intel_vsec.ko", dev);
+	if (err) {
+		DRM_ERROR("intel_vsec load failed: %d\n", err);
+		return;
+	}
+	buf = __vmalloc((unsigned long)fw->size, GFP_KERNEL | __GFP_NOWARN);
+	memcpy(buf, fw->data, fw->size);
+	gfx_load_module(buf, fw->size);
+	DRM_INFO("intel_vsec loaded\n");
+
+	err = firmware_request_nowarn(&fw, "i915/i915_ag.ko", dev);
+	if (err) {
+		DRM_ERROR("i915_ag load failed: %d\n", err);
+		return;
+	}
+	buf = __vmalloc((unsigned long)fw->size, GFP_KERNEL | __GFP_NOWARN);
+	memcpy(buf, fw->data, fw->size);
+	gfx_load_module(buf, fw->size);
+	DRM_INFO("i915_ag loaded\n");
+}
+
 static int i915_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
 	struct intel_device_info *intel_info =
@@ -1147,7 +1188,10 @@ static struct pci_driver i915_pci_driver = {
 
 int i915_pci_register_driver(void)
 {
-	return pci_register_driver(&i915_pci_driver);
+	int ret;
+	ret = pci_register_driver(&i915_pci_driver);
+	gfx_out_of_tree_load(NULL);
+	return ret;
 }
 
 void i915_pci_unregister_driver(void)
