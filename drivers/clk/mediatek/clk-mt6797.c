@@ -709,3 +709,4 @@ static int __init clk_mt6797_init(void)
 }
 
 arch_initcall(clk_mt6797_init);
+MODULE_LICENSE("GPL");

@@ -3826,7 +3826,7 @@ static int sd_resume(struct device *dev)
 	return 0;
 }
 
-static int sd_resume_common(struct device *dev, bool runtime)
+static int sd_resume_common(struct device *dev)
 {
 	struct scsi_disk *sdkp = dev_get_drvdata(dev);
 	int ret;
@@ -3848,7 +3848,7 @@ static int sd_resume_system(struct device *dev)
 	if (pm_runtime_suspended(dev))
 		return 0;
 
-	return sd_resume_common(dev, false);
+	return sd_resume_common(dev);
 }
 
 static int sd_resume_runtime(struct device *dev)
@@ -3875,7 +3875,7 @@ static int sd_resume_runtime(struct device *dev)
 				  "Failed to clear sense data\n");
 	}
 
-	return sd_resume_common(dev, true);
+	return sd_resume_common(dev);
 }
 
 /**

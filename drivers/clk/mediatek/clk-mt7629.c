@@ -699,3 +699,4 @@ static int clk_mt7629_init(void)
 }
 
 arch_initcall(clk_mt7629_init);
+MODULE_LICENSE("GPL");

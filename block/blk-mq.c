@@ -1159,10 +1159,11 @@ static inline bool blk_mq_complete_need_ipi(struct request *rq)
 	if (force_irqthreads())
 		return false;
 
-	/* same CPU or cache domain?  Complete locally */
+	/* same CPU or cache domain and capacity?  Complete locally */
 	if (cpu == rq->mq_ctx->cpu ||
 	    (!test_bit(QUEUE_FLAG_SAME_FORCE, &rq->q->queue_flags) &&
-	     cpus_share_cache(cpu, rq->mq_ctx->cpu)))
+	     cpus_share_cache(cpu, rq->mq_ctx->cpu) &&
+	     cpus_equal_capacity(cpu, rq->mq_ctx->cpu)))
 		return false;
 
 	/* don't try to IPI to an offline CPU */
@@ -2986,6 +2987,8 @@ void blk_mq_submit_bio(struct bio *bio)
 			bio = __bio_split_to_limits(bio, &q->limits, &nr_segs);
 			if (!bio)
 				return;
+		} else if (bio->bi_vcnt == 1) {
+			nr_segs = blk_segments(&q->limits, bio->bi_io_vec[0].bv_len);
 		}
 		if (!bio_integrity_prep(bio))
 			return;
@@ -3001,6 +3004,8 @@ void blk_mq_submit_bio(struct bio *bio)
 			bio = __bio_split_to_limits(bio, &q->limits, &nr_segs);
 			if (!bio)
 				goto fail;
+		} else if (bio->bi_vcnt == 1) {
+			nr_segs = blk_segments(&q->limits, bio->bi_io_vec[0].bv_len);
 		}
 		if (!bio_integrity_prep(bio))
 			goto fail;

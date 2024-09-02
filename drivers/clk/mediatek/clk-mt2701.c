@@ -1040,3 +1040,4 @@ static int __init clk_mt2701_init(void)
 }
 
 arch_initcall(clk_mt2701_init);
+MODULE_LICENSE("GPL");

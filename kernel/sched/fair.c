@@ -129,6 +129,7 @@ unsigned int sysctl_sched_child_runs_first __read_mostly;
  * (default: 1 msec * (1 + ilog(ncpus)), units: nanoseconds)
  */
 unsigned int sysctl_sched_wakeup_granularity			= 1000000UL;
+EXPORT_SYMBOL_GPL(sysctl_sched_wakeup_granularity);
 static unsigned int normalized_sysctl_sched_wakeup_granularity	= 1000000UL;
 
 const_debug unsigned int sysctl_sched_migration_cost	= 500000UL;
@@ -6076,12 +6077,12 @@ static inline bool cpu_overutilized(int cpu)
 	unsigned long  rq_util_min, rq_util_max;
 	int overutilized = -1;
 
-	if (!sched_energy_enabled())
-		return false;
-
 	trace_android_rvh_cpu_overutilized(cpu, &overutilized);
 	if (overutilized != -1)
 		return overutilized;
+
+	if (!sched_energy_enabled())
+		return false;
 
 	rq_util_min = uclamp_rq_get(cpu_rq(cpu), UCLAMP_MIN);
 	rq_util_max = uclamp_rq_get(cpu_rq(cpu), UCLAMP_MAX);
@@ -8652,7 +8653,7 @@ static int detach_tasks(struct lb_env *env)
 		case migrate_util:
 			util = task_util_est(p);
 
-			if (util > env->imbalance)
+			if (shr_bound(util, env->sd->nr_balance_failed) > env->imbalance)
 				goto next;
 
 			env->imbalance -= util;

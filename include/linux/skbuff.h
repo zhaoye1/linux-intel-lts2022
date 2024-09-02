@@ -872,7 +872,19 @@ struct sk_buff {
 		struct llist_node	ll_node;
 	};
 
+#ifdef __GENKSYMS__
+	/* ANDROID:
+	 * Put back the union removed in commit 7d0567842b78 ("inet:
+	 * inet_defrag: prevent sk release while still in use") to preserve the
+	 * crcs of stuff.  Does not affect any code functionality.
+	 */
+	union {
+		struct sock		*sk;
+		int			ip_defrag_offset;
+	};
+#else
 	struct sock		*sk;
+#endif
 
 	union {
 		ktime_t		tstamp;
