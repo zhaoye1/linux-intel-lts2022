@@ -68,7 +68,7 @@ static DEFINE_SEMAPHORE(optee_smc_lock);
 
 #define OPTEE_SHM_SMC_SIZE	0x200000
 
-#define PCI_DEVICE_ID_INTEL0	0x7465
+#define PCI_DEVICE_ID_INTEL0	0x1
 
 /* QNX tee shm size in pages*/
 #define QNX_TEE_SHM_SIZE		0x500
