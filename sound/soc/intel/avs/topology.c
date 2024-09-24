@@ -1118,6 +1118,21 @@ static const struct avs_tplg_token_parser module_parsers[] = {
 		.offset = offsetof(struct avs_tplg_module, ctl_id),
 		.parse = avs_parse_byte_token,
 	},
+	{
+		.token = AVS_TKN_MOD_INIT_CONFIG_NUM_IDS_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_module, num_config_ids),
+		.parse = avs_parse_byte_token,
+	},
+};
+
+static const struct avs_tplg_token_parser init_config_parsers[] = {
+	{
+		.token = AVS_TKN_MOD_INIT_CONFIG_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = 0,
+		.parse = avs_parse_word_token,
+	},
 };
 
 static struct avs_tplg_module *
@@ -1125,16 +1140,49 @@ avs_tplg_module_create(struct snd_soc_component *comp, struct avs_tplg_pipeline 
 		       struct snd_soc_tplg_vendor_array *tuples, u32 block_size)
 {
 	struct avs_tplg_module *module;
+	u32 esize;
 	int ret;
+
+	/* See where config id block starts. */
+	ret = avs_tplg_vendor_entry_size(tuples, block_size,
+					 AVS_TKN_MOD_INIT_CONFIG_ID_U32, &esize);
+	if (ret)
+		return ERR_PTR(ret);
 
 	module = devm_kzalloc(comp->card->dev, sizeof(*module), GFP_KERNEL);
 	if (!module)
 		return ERR_PTR(-ENOMEM);
 
 	ret = avs_parse_tokens(comp, module, module_parsers,
-			       ARRAY_SIZE(module_parsers), tuples, block_size);
+			       ARRAY_SIZE(module_parsers), tuples, esize);
 	if (ret < 0)
 		return ERR_PTR(ret);
+
+	block_size -= esize;
+	/* Parse trailing config ids if any. */
+	if (block_size) {
+		u32 num_config_ids = module->num_config_ids;
+		u32 *config_ids;
+
+		if (!num_config_ids)
+			return ERR_PTR(-EINVAL);
+
+		config_ids = devm_kcalloc(comp->card->dev, num_config_ids, sizeof(*config_ids),
+					   GFP_KERNEL);
+		if (!config_ids)
+			return ERR_PTR(-ENOMEM);
+
+		tuples = avs_tplg_vendor_array_at(tuples, esize);
+		ret = parse_dictionary_entries(comp, tuples, block_size,
+					       config_ids, num_config_ids, sizeof(*config_ids),
+					       AVS_TKN_MOD_INIT_CONFIG_ID_U32,
+					       init_config_parsers,
+					       ARRAY_SIZE(init_config_parsers));
+		if (ret)
+			return ERR_PTR(ret);
+
+		module->config_ids = config_ids;
+	}
 
 	module->owner = owner;
 	INIT_LIST_HEAD(&module->node);
@@ -1279,6 +1327,27 @@ static const struct avs_tplg_token_parser path_parsers[] = {
 	},
 };
 
+static const struct avs_tplg_token_parser condpath_parsers[] = {
+	{
+		.token = AVS_TKN_CONDPATH_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path, id),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_SOURCE_PATH_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path, source_path_id),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_SINK_PATH_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path, sink_path_id),
+		.parse = avs_parse_word_token,
+	},
+};
+
 static struct avs_tplg_path *
 avs_tplg_path_create(struct snd_soc_component *comp, struct avs_tplg_path_template *owner,
 		     struct snd_soc_tplg_vendor_array *tuples, u32 block_size,
@@ -1343,6 +1412,57 @@ static const struct avs_tplg_token_parser path_tmpl_parsers[] = {
 		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
 		.offset = offsetof(struct avs_tplg_path_template, id),
 		.parse = avs_parse_word_token,
+	},
+};
+
+static const struct avs_tplg_token_parser condpath_tmpl_parsers[] = {
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path_template, id),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_SOURCE_TPLG_NAME_STRING,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_STRING,
+		.offset = offsetof(struct avs_tplg_path_template, source.tplg_name),
+		.parse = avs_parse_string_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_SOURCE_PATH_TMPL_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path_template, source.id),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_SINK_TPLG_NAME_STRING,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_STRING,
+		.offset = offsetof(struct avs_tplg_path_template, sink.tplg_name),
+		.parse = avs_parse_string_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_SINK_PATH_TMPL_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path_template, sink.id),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_COND_TYPE_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path_template, cond_type),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_OVERRIDABLE_BOOL,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_BOOL,
+		.offset = offsetof(struct avs_tplg_path_template, overridable),
+		.parse = avs_parse_bool_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_PRIORITY_U8,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_BYTE,
+		.offset = offsetof(struct avs_tplg_path_template, priority),
+		.parse = avs_parse_byte_token,
 	},
 };
 
@@ -1414,6 +1534,132 @@ avs_tplg_path_template_create(struct snd_soc_component *comp, struct avs_tplg *o
 		return ERR_PTR(ret);
 
 	return template;
+}
+
+static int avs_tplg_parse_condpath_templates(struct snd_soc_component *comp,
+					     struct snd_soc_tplg_vendor_array *tuples,
+					     u32 block_size)
+{
+	struct avs_soc_component *acomp = to_avs_soc_component(comp);
+	struct avs_tplg *tplg = acomp->tplg;
+	int ret, i;
+
+	ret = parse_dictionary_header(comp, tuples, (void **)&tplg->condpath_tmpls,
+				      &tplg->num_condpath_tmpls,
+				      sizeof(*tplg->condpath_tmpls),
+				      AVS_TKN_MANIFEST_NUM_CONDPATH_TMPLS_U32);
+	if (ret)
+		return ret;
+
+	block_size -= le32_to_cpu(tuples->size);
+	/* With header parsed, move on to parsing entries. */
+	tuples = avs_tplg_vendor_array_next(tuples);
+
+	for (i = 0; i < tplg->num_condpath_tmpls; i++) {
+		struct avs_tplg_path_template *template;
+		u32 esize;
+
+		template = &tplg->condpath_tmpls[i];
+		template->owner = tplg; /* Used when building sysfs hierarchy. */
+		INIT_LIST_HEAD(&template->path_list);
+		INIT_LIST_HEAD(&template->node);
+
+		ret = avs_tplg_vendor_entry_size(tuples, block_size,
+						 AVS_TKN_CONDPATH_TMPL_ID_U32, &esize);
+		if (ret)
+			return ret;
+
+		ret = parse_path_template(comp, tuples, esize, template,
+					  condpath_tmpl_parsers,
+					  ARRAY_SIZE(condpath_tmpl_parsers),
+					  condpath_parsers,
+					  ARRAY_SIZE(condpath_parsers));
+		if (ret < 0) {
+			dev_err(comp->dev, "parse condpath_tmpl: %d failed: %d\n", i, ret);
+			return ret;
+		}
+
+		block_size -= esize;
+		tuples = avs_tplg_vendor_array_at(tuples, esize);
+	}
+
+	return 0;
+}
+
+static const struct avs_tplg_token_parser mod_init_config_parsers[] = {
+	{
+		.token = AVS_TKN_INIT_CONFIG_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_init_config, id),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_INIT_CONFIG_PARAM_U8,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_BYTE,
+		.offset = offsetof(struct avs_tplg_init_config, param),
+		.parse = avs_parse_byte_token,
+	},
+	{
+		.token = AVS_TKN_INIT_CONFIG_LENGTH_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_init_config, length),
+		.parse = avs_parse_word_token,
+	},
+};
+
+static int avs_tplg_parse_initial_configs(struct snd_soc_component *comp,
+					   struct snd_soc_tplg_vendor_array *tuples,
+					   u32 block_size)
+{
+	struct avs_soc_component *acomp = to_avs_soc_component(comp);
+	struct avs_tplg *tplg = acomp->tplg;
+	int ret, i;
+
+	/* Parse tuple section telling how many init configs there are. */
+	ret = parse_dictionary_header(comp, tuples, (void **)&tplg->init_configs,
+				      &tplg->num_init_configs,
+				      sizeof(*tplg->init_configs),
+				      AVS_TKN_MANIFEST_NUM_INIT_CONFIGS_U32);
+	if (ret)
+		return ret;
+
+	block_size -= le32_to_cpu(tuples->size);
+	/* With header parsed, move on to parsing entries. */
+	tuples = avs_tplg_vendor_array_next(tuples);
+
+	for (i = 0; i < tplg->num_init_configs && block_size > 0; i++) {
+		struct avs_tplg_init_config *config = &tplg->init_configs[i];
+		struct snd_soc_tplg_vendor_array *tmp;
+		void *init_config_data;
+		u32 esize;
+
+		/*
+		 * Usually to get section length we search for first token of next group of data,
+		 * but in this case we can't as tuples are followed by raw data.
+		 */
+		tmp = avs_tplg_vendor_array_next(tuples);
+		esize = le32_to_cpu(tuples->size) + le32_to_cpu(tmp->size);
+
+		ret = parse_dictionary_entries(comp, tuples, esize, config, 1, sizeof(*config),
+					       AVS_TKN_INIT_CONFIG_ID_U32,
+					       mod_init_config_parsers,
+					       ARRAY_SIZE(mod_init_config_parsers));
+
+		block_size -= esize;
+
+		/* handle raw data section */
+		init_config_data = (void *)tuples + esize;
+		esize = config->length;
+
+		config->data = devm_kmemdup(comp->card->dev, init_config_data, esize, GFP_KERNEL);
+		if (!config->data)
+			return -ENOMEM;
+
+		tuples = init_config_data + esize;
+		block_size -= esize;
+	}
+
+	return 0;
 }
 
 static int avs_route_load(struct snd_soc_component *comp, int index,
@@ -1571,6 +1817,7 @@ static int avs_manifest(struct snd_soc_component *comp, int index,
 	struct snd_soc_tplg_vendor_array *tuples = manifest->priv.array;
 	struct avs_soc_component *acomp = to_avs_soc_component(comp);
 	size_t remaining = le32_to_cpu(manifest->priv.size);
+	bool has_init_config = true;
 	u32 offset;
 	int ret;
 
@@ -1668,8 +1915,49 @@ static int avs_manifest(struct snd_soc_component *comp, int index,
 	remaining -= offset;
 	tuples = avs_tplg_vendor_array_at(tuples, offset);
 
+	ret = avs_tplg_vendor_array_lookup(tuples, remaining,
+					   AVS_TKN_MANIFEST_NUM_CONDPATH_TMPLS_U32, &offset);
+	if (ret) {
+		dev_err(comp->dev, "condpath lookup failed: %d\n", ret);
+		return ret;
+	}
+
 	/* Bindings dictionary. */
-	return avs_tplg_parse_bindings(comp, tuples, remaining);
+	ret = avs_tplg_parse_bindings(comp, tuples, offset);
+	if (ret < 0)
+		return ret;
+
+	remaining -= offset;
+	tuples = avs_tplg_vendor_array_at(tuples, offset);
+
+	ret = avs_tplg_vendor_array_lookup(tuples, remaining,
+					   AVS_TKN_MANIFEST_NUM_INIT_CONFIGS_U32, &offset);
+	if (ret == -ENOENT) {
+		dev_dbg(comp->dev, "init config lookup failed: %d\n", ret);
+		has_init_config = false;
+	} else if (ret) {
+		dev_err(comp->dev, "init config lookup failed: %d\n", ret);
+		return ret;
+	}
+
+	/* Condpaths dictionary. */
+	ret = avs_tplg_parse_condpath_templates(comp, tuples,
+						has_init_config ? offset : remaining);
+	if (ret < 0)
+		return ret;
+
+	if (!has_init_config)
+		return 0;
+
+	remaining -= offset;
+	tuples = avs_tplg_vendor_array_at(tuples, offset);
+
+	/* Initial configs dictionary. */
+	ret = avs_tplg_parse_initial_configs(comp, tuples, remaining);
+	if (ret < 0)
+		return ret;
+
+	return 0;
 }
 
 #define AVS_CONTROL_OPS_VOLUME	257
