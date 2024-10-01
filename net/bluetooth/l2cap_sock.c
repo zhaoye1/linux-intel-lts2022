@@ -1496,7 +1496,7 @@ static int l2cap_sock_recv_cb(struct l2cap_chan *chan, struct sk_buff *skb)
 
 	pi = l2cap_pi(sk);
 	lock_sock(sk);
-	if (l2cap_pi(sk)->rx_busy_skb) {
+	if (chan->mode == L2CAP_MODE_ERTM && l2cap_pi(sk)->rx_busy_skb) {
 		err = -ENOMEM;
 		goto done;
 	}
