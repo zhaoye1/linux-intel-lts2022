@@ -2739,7 +2739,7 @@ static int unknown_module_param_cb(char *param, char *val, const char *modname,
  * zero, and we rely on this for optional sections.
  */
 static int load_module(struct load_info *info, const char __user *uargs,
-		       int flags, bool no_args)
+		       const char *kargs, int flags, bool no_uargs)
 {
 	struct module *mod;
 	long err = 0;
@@ -2866,7 +2866,7 @@ static int load_module(struct load_info *info, const char __user *uargs,
 	flush_module_icache(mod);
 
 	/* Now copy in args */
-	if (!no_args) {
+	if (!no_uargs) {
 		mod->args = strndup_user(uargs, ~0UL >> 1);
 		if (IS_ERR(mod->args)) {
 			pr_debug("%s mod->args error\n", __func__);
@@ -2875,8 +2875,12 @@ static int load_module(struct load_info *info, const char __user *uargs,
 		}
 		pr_debug("%s mod->args: %llx \n", __func__, (u64)mod->args);
 	} else {
-		char *arg = "";
-		mod->args = kmemdup(arg, strlen(arg) + 1, GFP_KERNEL);
+		if (kargs)
+			mod->args = kmemdup(kargs, strlen(kargs) + 1, GFP_KERNEL);
+		else {
+			char *arg = "";
+			mod->args = kmemdup(arg, strlen(arg) + 1, GFP_KERNEL);
+		}
 	}
 
 	init_build_id(mod, info);
@@ -2989,7 +2993,7 @@ SYSCALL_DEFINE3(init_module, void __user *, umod,
 	if (err)
 		return err;
 
-	return load_module(&info, uargs, 0, false);
+	return load_module(&info, uargs, NULL, 0, false);
 }
 
 SYSCALL_DEFINE3(finit_module, int, fd, const char __user *, uargs, int, flags)
@@ -3025,15 +3029,15 @@ SYSCALL_DEFINE3(finit_module, int, fd, const char __user *, uargs, int, flags)
 		info.len = len;
 	}
 
-	return load_module(&info, uargs, flags, false);
+	return load_module(&info, uargs, NULL, flags, false);
 }
 
-int gfx_load_module(void *buf, int len)
+int gfx_load_module(void *buf, int len, const char *kargs)
 {
 	struct load_info info = { };
 	info.hdr = buf;
 	info.len = len;
-	return load_module(&info, NULL, 0, true);
+	return load_module(&info, NULL, kargs, 0, true);
 }
 
 static inline int within(unsigned long addr, void *start, unsigned long size)

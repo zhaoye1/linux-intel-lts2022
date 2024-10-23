@@ -1024,7 +1024,7 @@ static bool intel_mmio_bar_valid(struct pci_dev *pdev, struct intel_device_info 
 	return i915_pci_resource_valid(pdev, intel_mmio_bar(intel_info->__runtime.graphics.ip.ver));
 }
 
-extern int gfx_load_module(void *buf, int len);
+extern int gfx_load_module(void *buf, int len, const char *kargs);
 
 static void gfx_out_of_tree_load(struct device *dev)
 {
@@ -1039,7 +1039,7 @@ static void gfx_out_of_tree_load(struct device *dev)
 	}
 	buf = __vmalloc((unsigned long)fw->size, GFP_KERNEL | __GFP_NOWARN);
 	memcpy(buf, fw->data, fw->size);
-	gfx_load_module(buf, fw->size);
+	gfx_load_module(buf, fw->size, NULL);
 	DRM_INFO("compat loaded\n");
 
 	err = firmware_request_nowarn(&fw, "i915/intel_vsec.ko", dev);
@@ -1049,7 +1049,7 @@ static void gfx_out_of_tree_load(struct device *dev)
 	}
 	buf = __vmalloc((unsigned long)fw->size, GFP_KERNEL | __GFP_NOWARN);
 	memcpy(buf, fw->data, fw->size);
-	gfx_load_module(buf, fw->size);
+	gfx_load_module(buf, fw->size, NULL);
 	DRM_INFO("intel_vsec loaded\n");
 
 	err = firmware_request_nowarn(&fw, "i915/i915_ag.ko", dev);
@@ -1059,7 +1059,7 @@ static void gfx_out_of_tree_load(struct device *dev)
 	}
 	buf = __vmalloc((unsigned long)fw->size, GFP_KERNEL | __GFP_NOWARN);
 	memcpy(buf, fw->data, fw->size);
-	gfx_load_module(buf, fw->size);
+	gfx_load_module(buf, fw->size, "nuclear_pageflip=1 enable_guc=0x7 max_vfs=7 modeset=1 fastboot=1");
 	DRM_INFO("i915_ag loaded\n");
 }
 
