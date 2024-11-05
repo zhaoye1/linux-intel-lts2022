@@ -344,6 +344,7 @@ struct fuse_page_desc {
 struct fuse_args {
 	uint64_t nodeid;
 	uint32_t opcode;
+	uint32_t error_in;
 	uint8_t in_numargs;
 	uint8_t out_numargs;
 	uint8_t ext_idx;
