@@ -278,6 +278,7 @@ static inline void
 i915_error_state_buf_release(struct drm_i915_error_state_buf *eb)
 {
 	kfree(eb->buf);
+	eb->buf = NULL;
 }
 #endif
 

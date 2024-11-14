@@ -407,7 +407,7 @@ int i915_gem_create_sysfs_file_entry(struct drm_device *dev,
 		struct drm_i915_file_private *file_priv_local =
 			file_local->driver_priv;
 
-		if (file_priv->tgid == file_priv_local->tgid) {
+		if (pid_nr(file_priv->tgid) == pid_nr(file_priv_local->tgid)) {
 			file_priv->obj_attr = file_priv_local->obj_attr;
 			mutex_unlock(&dev->filelist_mutex);
 			return 0;
@@ -439,7 +439,6 @@ int i915_gem_create_sysfs_file_entry(struct drm_device *dev,
 	obj_attr->attr.mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 	obj_attr->size = 0;
 	obj_attr->read = i915_gem_read_objects;
-
 	attr_priv->tgid = file_priv->tgid;
 	obj_attr->private = attr_priv;
 
@@ -487,19 +486,29 @@ void i915_gem_remove_sysfs_file_entry(struct drm_device *dev,
 	}
 	mutex_unlock(&dev->filelist_mutex);
 
+	mutex_lock(&drm_global_mutex);
 	if (open_count == 1) {
 		struct i915_gem_file_attr_priv *attr_priv;
 
-		if (WARN_ON(file_priv->obj_attr == NULL))
-			return;
+		if (file_priv->obj_attr == NULL)
+			goto out;
+
 		attr_priv = file_priv->obj_attr->private;
+		if (attr_priv == NULL)
+			goto out;
 
 		sysfs_remove_bin_file(&dev_priv->memtrack_kobj,
 				      file_priv->obj_attr);
-		i915_error_state_buf_release(&attr_priv->buf);
-		kfree(file_priv->obj_attr->private);
+		if (attr_priv->buf.buf)
+			i915_error_state_buf_release(&attr_priv->buf);
+		kfree(attr_priv);
+		attr_priv = NULL;
 		kfree(file_priv->obj_attr);
+		file_priv->obj_attr = NULL;
 	}
+
+out:
+	mutex_unlock(&drm_global_mutex);
 }
 
 static struct bin_attribute i915_gem_client_state_attr = {
